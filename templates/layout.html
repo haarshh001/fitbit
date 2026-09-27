@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetFit Checker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0c0f14;
+            --bg-card: #13161d;
+            --bg-card-hover: #191d27;
+            --bg-input: #1a1e28;
+            --border: #252a36;
+            --border-focus: #f59e0b;
+            --text-primary: #f1f3f5;
+            --text-secondary: #8b95a5;
+            --text-muted: #5c6478;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --green: #22c55e;
+            --green-bg: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-bg: rgba(239,68,68,0.12);
+            --yellow: #f59e0b;
+            --yellow-bg: rgba(245,158,11,0.12);
+            --blue: #3b82f6;
+            --blue-bg: rgba(59,130,246,0.12);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .top-bar {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .top-bar .brand {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .top-bar .brand span { color: var(--accent); }
+        .top-bar .nav-link {
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .top-bar .nav-link:hover, .top-bar .nav-link.active {
+            color: var(--text-primary);
+            background: var(--bg-input);
+        }
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-primary);
+            letter-spacing: -0.2px;
+        }
+        .panel-body { padding: 20px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px 20px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .stat-item:hover { border-color: var(--border-focus); }
+        .stat-item .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 6px;
+            letter-spacing: -1px;
+        }
+        .stat-item .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+        .stat-item.scanned .stat-value { color: var(--blue); }
+        .stat-item.hits .stat-value { color: var(--green); }
+        .stat-item.errors .stat-value { color: var(--red); }
+        .form-control, .form-select {
+            background: var(--bg-input) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text-primary) !important;
+            border-radius: 10px !important;
+            padding: 10px 14px !important;
+            font-size: 13px !important;
+            font-family: 'Inter', sans-serif !important;
+            transition: border-color 0.2s !important;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--border-focus) !important;
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15) !important;
+            outline: none !important;
+        }
+        .form-control::placeholder { color: var(--text-muted) !important; }
+        .form-select option { background: var(--bg-card); color: var(--text-primary); }
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .btn {
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            padding: 9px 18px;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-accent { background: var(--accent); color: #000; }
+        .btn-accent:hover { background: var(--accent-hover); color: #000; }
+        .btn-ghost {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-go { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+        .btn-go:hover { background: rgba(34,197,94,0.2); color: var(--green); }
+        .btn-stop { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+        .btn-stop:hover { background: rgba(239,68,68,0.2); color: var(--red); }
+        .btn-warn { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+        .btn-warn:hover { background: rgba(245,158,11,0.2); color: var(--yellow); }
+        .btn-xs { padding: 5px 12px; font-size: 12px; border-radius: 8px; }
+        .btn-sm { padding: 7px 14px; font-size: 12px; }
+        .table {
+            color: var(--text-primary);
+            margin-bottom: 0;
+            --bs-table-bg: transparent;
+        }
+        .table thead th {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 12px;
+            white-space: nowrap;
+        }
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+            font-size: 13px;
+        }
+        .table tr:last-child td { border-bottom: none; }
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-status.running { background: var(--green-bg); color: var(--green); }
+        .badge-status.stopped { background: rgba(92,100,120,0.15); color: var(--text-muted); }
+        .badge-status.auth { background: var(--green-bg); color: var(--green); }
+        .badge-status.unauth { background: var(--yellow-bg); color: var(--yellow); }
+        .badge-status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+        .badge-status.running .dot { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        code {
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+        .log-entry {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        hr { border-color: var(--border); opacity: 0.5; margin: 16px 0; }
+        .hit-card {
+            background: var(--bg-card);
+            border: 1px solid var(--green);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .hit-card .hit-label {
+            font-size: 11px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .hit-card .hit-value { font-size: 14px; color: var(--text-primary); }
+        .scroll-panel {
+            max-height: 75vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+        .scroll-panel::-webkit-scrollbar { width: 6px; }
+        .scroll-panel::-webkit-scrollbar-track { background: transparent; }
+        .scroll-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .modal-content {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            color: var(--text-primary);
+        }
+        .modal-header { border-bottom: 1px solid var(--border) !important; }
+        .modal-title { font-size: 16px; font-weight: 600; }
+        .btn-close-white { filter: invert(1); }
+        .gap-8 { gap: 8px; }
+        .gap-12 { gap: 12px; }
+        .text-muted-custom { color: var(--text-muted) !important; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="brand">&#x1F3C6; BetFit <span>Checker</span></div>
+            <div class="d-flex gap-8">
+                <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
+                <a href="{{ url_for('view_logs') }}" class="nav-link {% if request.endpoint == 'view_logs' %}active{% endif %}">Logs</a>
+                <a href="{{ url_for('view_firebases') }}" class="nav-link {% if request.endpoint == 'view_firebases' %}active{% endif %}">Firebases</a>
+                <a href="{{ url_for('view_hits') }}" class="nav-link {% if request.endpoint == 'view_hits' %}active{% endif %}">Hits</a>
+            </div>
+        </div>
+    </div>
+    <div class="container" style="padding-top: 24px; padding-bottom: 40px;">
+        {% block content %}{% endblock %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

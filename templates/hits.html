@@ -1,0 +1,48 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h3>BetFit Refers</h3>
+        <span style="color: var(--green); font-size:13px; font-weight:600;">{{ hits|length }} total</span>
+    </div>
+    <div class="panel-body p-0">
+        <div class="scroll-panel" style="padding: 16px 20px;">
+            {% for hit in hits %}
+            <div class="hit-card">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <span class="hit-label">Phone</span><br>
+                            <span class="hit-value" style="font-weight:600; font-size:16px;">{{ hit.phone }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="hit-label">Status</span><br>
+                            <span style="color: var(--green); font-weight:600;">&#x2705; {{ hit.status or 'Refer Counted' }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <span class="hit-label">Device</span><br>
+                            <code>{{ hit.device_id or '—' }}</code>
+                        </div>
+                        <div class="mb-2">
+                            <span class="hit-label">Firebase</span><br>
+                            <span style="color: var(--text-muted); font-size:12px;">{{ hit.fb_url|replace('https://','')|replace('.firebaseio.com','') if hit.fb_url else '—' }}</span>
+                        </div>
+                        <div>
+                            <span class="hit-label">Time</span><br>
+                            <span style="color: var(--text-muted); font-size:12px;">{{ hit.timestamp }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+                <div style="text-align:center; color: var(--text-muted); padding: 60px 0;">
+                    <div style="font-size:48px; margin-bottom:12px; opacity:0.3;">&#x1F50D;</div>
+                    <div>No refers yet. Start scanning to earn referrals.</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

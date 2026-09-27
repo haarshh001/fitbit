@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+{% block content %}
+<!-- Add Firebase Links -->
+<div class="panel">
+    <div class="panel-header">
+        <h3>Add Firebase Links</h3>
+    </div>
+    <div class="panel-body">
+        <form action="{{ url_for('manage_firebases') }}" method="post">
+            <input type="hidden" name="action" value="add">
+            <div class="mb-3">
+                <label class="form-label">Paste Firebase URLs <span style="color:var(--text-muted)">(one per line, or bulk Nexus export — auto-extracts URLs)</span></label>
+                <textarea name="urls" class="form-control" rows="5" placeholder="https://example-default-rtdb.firebaseio.com&#10;https://another-db-default-rtdb.firebaseio.com&#10;&#10;Or paste entire Nexus export — URLs are auto-extracted" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px;"></textarea>
+            </div>
+            <button type="submit" class="btn btn-accent">&#x2795; Add Links</button>
+        </form>
+    </div>
+</div>
+
+<!-- Firebase Links List -->
+<div class="panel">
+    <div class="panel-header">
+        <h3>Firebase Links</h3>
+        <div class="d-flex align-items-center gap-12">
+            <span style="color: var(--text-muted); font-size:12px;">{{ firebases|length }} total</span>
+            {% if firebases|length > 0 %}
+            <form action="{{ url_for('manage_firebases') }}" method="post" class="d-inline">
+                <input type="hidden" name="action" value="clear_all">
+                <button type="submit" class="btn btn-stop btn-xs" onclick="return confirm('Delete ALL Firebase links?');">Clear All</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="panel-body p-0">
+        <div class="scroll-panel" style="padding: 16px 20px;">
+            {% for link in firebases %}
+                <div style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:12px;">
+                    <span style="color: var(--text-muted); min-width: 30px; text-align:right;">{{ loop.index0 }}</span>
+                    <span style="color: var(--text-secondary); flex-grow:1;">{{ link }}</span>
+                    <form action="{{ url_for('manage_firebases') }}" method="post" class="d-inline" style="margin:0;">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="idx" value="{{ loop.index0 }}">
+                        <button type="submit" class="btn btn-stop btn-xs" style="padding:2px 8px; font-size:11px;" title="Remove">&#x2715;</button>
+                    </form>
+                </div>
+            {% else %}
+                <div style="text-align:center; color: var(--text-muted); padding: 40px 0;">No Firebase links loaded. Add URLs above.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

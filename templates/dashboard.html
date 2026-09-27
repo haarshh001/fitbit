@@ -1,0 +1,373 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<!-- Stats -->
+<div class="stat-grid">
+    <div class="stat-item scanned">
+        <div class="stat-value">{{ stats.total_scanned }}</div>
+        <div class="stat-label">Scanned</div>
+    </div>
+    <div class="stat-item hits">
+        <div class="stat-value">{{ stats.total_hits }}</div>
+        <div class="stat-label">Refers</div>
+    </div>
+    <div class="stat-item errors">
+        <div class="stat-value">{{ stats.total_errors }}</div>
+        <div class="stat-label">Errors</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Telegram Sessions -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Telegram Sessions</h3>
+                <span class="text-muted-custom" style="font-size:12px;">{{ tg_sessions|length }} session{{ 's' if tg_sessions|length != 1 }}</span>
+            </div>
+            <div class="panel-body">
+                {% if tg_sessions|length > 0 %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>API ID</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th style="text-align:right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in tg_sessions %}
+                        <tr>
+                            <td><code>{{ s.name }}</code></td>
+                            <td style="color: var(--text-secondary);">{{ s.api_id }}</td>
+                            <td style="color: var(--text-secondary);">{{ s.phone or '—' }}</td>
+                            <td>
+                                {% if s.authenticated %}
+                                <span class="badge-status auth"><span class="dot"></span> Authenticated</span>
+                                {% else %}
+                                <span class="badge-status unauth"><span class="dot"></span> Not Auth</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align:right">
+                                <div class="d-flex gap-8 justify-content-end">
+                                    {% if not s.authenticated %}
+                                    <button class="btn btn-accent btn-xs" onclick="showAuthModal('{{ s.name }}')">Authenticate</button>
+                                    {% endif %}
+                                    <form action="{{ url_for('manage_tg_sessions') }}" method="post" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="name" value="{{ s.name }}">
+                                        <button type="submit" class="btn btn-stop btn-xs" onclick="return confirm('Delete session {{ s.name }}?');">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: var(--text-muted); text-align:center; padding: 20px 0; margin:0;">No sessions yet. Add your first Telegram session below.</p>
+                {% endif %}
+                <hr>
+                <form action="{{ url_for('manage_tg_sessions') }}" method="post" class="d-flex gap-12 align-items-end">
+                    <input type="hidden" name="action" value="add">
+                    <div class="flex-fill">
+                        <label class="form-label">Session Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. tg1" required>
+                    </div>
+                    <div class="flex-fill">
+                        <label class="form-label">API ID</label>
+                        <input type="text" name="api_id" class="form-control" placeholder="123456" required>
+                    </div>
+                    <div class="flex-fill">
+                        <label class="form-label">API Hash</label>
+                        <input type="text" name="api_hash" class="form-control" placeholder="abc123def456..." required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-accent">Add Session</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Worker Instances -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Worker Instances</h3>
+                <form action="{{ url_for('manage_instances') }}" method="post" class="d-flex gap-8 align-items-center">
+                    <input type="hidden" name="action" value="auto_divide">
+                    <input type="number" name="num_instances" class="form-control" style="width:70px; padding:7px 10px !important;" placeholder="#" required min="1" max="50">
+                    <select name="session" class="form-select" style="width:140px; padding:7px 10px !important;" required>
+                        <option value="" disabled selected>Session</option>
+                        {% for s in tg_sessions %}{% if s.authenticated %}
+                        <option value="{{ s.name }}">{{ s.name }}</option>
+                        {% endif %}{% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-accent btn-sm" onclick="return confirm('Auto-divide all links into instances?');">Auto Create</button>
+                </form>
+            </div>
+            <div class="panel-body">
+                {% if instances|length > 0 %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Link Range</th>
+                            <th>Session</th>
+                            <th>Status</th>
+                            <th style="text-align:right">Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in instances %}
+                        <tr>
+                            <td style="font-weight:600;">#{{ inst.id }}</td>
+                            <td style="color: var(--text-secondary);">{{ inst.start_idx }} — {{ inst.end_idx }}</td>
+                            <td><code>{{ inst.session or '—' }}</code></td>
+                            <td>
+                                {% if inst.status == 'Running' %}
+                                <span class="badge-status running"><span class="dot"></span> Running</span>
+                                {% else %}
+                                <span class="badge-status stopped"><span class="dot"></span> Stopped</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align:right">
+                                <div class="d-flex gap-8 justify-content-end">
+                                    <form action="{{ url_for('manage_instances') }}" method="post" class="d-inline">
+                                        <input type="hidden" name="action" value="start"><input type="hidden" name="id" value="{{ inst.id }}">
+                                        <button type="submit" class="btn btn-go btn-xs">Start</button>
+                                    </form>
+                                    <form action="{{ url_for('manage_instances') }}" method="post" class="d-inline">
+                                        <input type="hidden" name="action" value="stop"><input type="hidden" name="id" value="{{ inst.id }}">
+                                        <button type="submit" class="btn btn-warn btn-xs">Stop</button>
+                                    </form>
+                                    <form action="{{ url_for('manage_instances') }}" method="post" class="d-inline">
+                                        <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ inst.id }}">
+                                        <button type="submit" class="btn btn-stop btn-xs">&#x2715;</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: var(--text-muted); text-align:center; padding: 20px 0; margin:0;">No instances. Create one below or use Auto Create.</p>
+                {% endif %}
+
+                <hr>
+                <form action="{{ url_for('manage_instances') }}" method="post" class="d-flex gap-12 align-items-end">
+                    <input type="hidden" name="action" value="add">
+                    <div>
+                        <label class="form-label">Start Link</label>
+                        <input type="number" name="start_idx" class="form-control" placeholder="0" required min="0" style="width:100px">
+                    </div>
+                    <div>
+                        <label class="form-label">End Link</label>
+                        <input type="number" name="end_idx" class="form-control" placeholder="10" required min="0" style="width:100px">
+                    </div>
+                    <div>
+                        <label class="form-label">Session</label>
+                        <select name="session" class="form-select" required style="width:140px">
+                            <option value="" disabled selected>Select</option>
+                            {% for s in tg_sessions %}{% if s.authenticated %}
+                            <option value="{{ s.name }}">{{ s.name }}</option>
+                            {% endif %}{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-accent">Add Instance</button>
+                    </div>
+                </form>
+
+                <hr>
+                <div class="d-flex gap-12">
+                    <form action="{{ url_for('toggle_instances') }}" method="post" class="d-inline">
+                        <input type="hidden" name="action" value="start_all">
+                        <button type="submit" class="btn btn-go">&#x25B6;&#xFE0E; Start All</button>
+                    </form>
+                    <form action="{{ url_for('toggle_instances') }}" method="post" class="d-inline">
+                        <input type="hidden" name="action" value="stop_all">
+                        <button type="submit" class="btn btn-stop">&#x25A0;&#xFE0E; Stop All</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Sidebar -->
+    <div class="col-lg-4">
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Settings</h3>
+            </div>
+            <div class="panel-body">
+                <form action="{{ url_for('save_settings_route') }}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Proxy URL</label>
+                        <input type="text" id="proxyInput" name="proxy" class="form-control" value="{{ settings.proxy }}" placeholder="socks5h://user:pass@ip:port">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">BetFit Bot Username</label>
+                        <input type="text" name="betfit_bot" class="form-control" value="{{ settings.betfit_bot }}" placeholder="BetFitReferProBot">
+                    </div>
+                    <div class="d-flex gap-8">
+                        <button type="submit" class="btn btn-accent flex-grow-1">Save</button>
+                        <button type="button" class="btn btn-ghost" onclick="testProxy()">Test</button>
+                    </div>
+                </form>
+                <div id="proxy-result" class="mt-3 text-center" style="display:none; font-size:13px;"></div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>How It Works</h3>
+            </div>
+            <div class="panel-body" style="font-size:12px; color: var(--text-muted); line-height: 1.8;">
+                <div style="margin-bottom:8px;">&#x2460; Add TG session (API ID & Hash)</div>
+                <div style="margin-bottom:8px;">&#x2461; Authenticate the session</div>
+                <div style="margin-bottom:8px;">&#x2462; Create instances & assign session</div>
+                <div style="margin-bottom:8px;">&#x2463; Start All — scans Firebase DBs</div>
+                <div style="margin-bottom:8px;">&#x2464; Finds active phones via Zomato OTP</div>
+                <div>&#x2465; Auto-registers on BetFit bot &#x1F525;</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal fade" id="authModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Authenticate: <code id="authSessionName" style="font-size:14px;"></code></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <input type="hidden" id="authSessionNameHidden">
+                <div class="mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" id="authPhone" class="form-control" placeholder="+91XXXXXXXXXX">
+                </div>
+                <button class="btn btn-accent w-100 mb-4" onclick="sendCode()">Send Verification Code</button>
+                <div id="authCodeSection" style="display:none">
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label">Verification Code</label>
+                        <input type="text" id="authCode" class="form-control" placeholder="Enter the code you received">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">2FA Password <span style="color:var(--text-muted)">(if enabled)</span></label>
+                        <input type="password" id="auth2FA" class="form-control" placeholder="Optional">
+                    </div>
+                    <button class="btn btn-go w-100" onclick="verifyCode()">Verify & Save</button>
+                </div>
+                <div id="authResult" class="mt-3 text-center" style="display:none; font-size:13px; padding:12px; border-radius:10px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentAuthSession = '';
+
+function showAuthModal(name) {
+    currentAuthSession = name;
+    document.getElementById('authSessionName').innerText = name;
+    document.getElementById('authSessionNameHidden').value = name;
+    document.getElementById('authCodeSection').style.display = 'none';
+    document.getElementById('authResult').style.display = 'none';
+    document.getElementById('authPhone').value = '';
+    document.getElementById('authCode').value = '';
+    document.getElementById('auth2FA').value = '';
+    new bootstrap.Modal(document.getElementById('authModal')).show();
+}
+
+function sendCode() {
+    const phone = document.getElementById('authPhone').value;
+    const res = document.getElementById('authResult');
+    res.style.display = 'block';
+    res.style.background = 'var(--blue-bg)';
+    res.style.color = 'var(--blue)';
+    res.innerText = 'Sending code...';
+    const fd = new FormData();
+    fd.append('session_name', currentAuthSession);
+    fd.append('phone', phone);
+    fetch('{{ url_for("tg_send_code") }}', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'code_sent') {
+            res.style.background = 'var(--green-bg)';
+            res.style.color = 'var(--green)';
+            res.innerText = 'Code sent! Enter it below.';
+            document.getElementById('authCodeSection').style.display = 'block';
+        } else {
+            res.style.background = 'var(--red-bg)';
+            res.style.color = 'var(--red)';
+            res.innerText = 'Error: ' + data.message;
+        }
+    });
+}
+
+function verifyCode() {
+    const code = document.getElementById('authCode').value;
+    const pw = document.getElementById('auth2FA').value;
+    const res = document.getElementById('authResult');
+    res.style.display = 'block';
+    res.style.background = 'var(--blue-bg)';
+    res.style.color = 'var(--blue)';
+    res.innerText = 'Verifying...';
+    const fd = new FormData();
+    fd.append('session_name', currentAuthSession);
+    fd.append('code', code);
+    fd.append('password', pw);
+    fetch('{{ url_for("tg_verify") }}', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            res.style.background = 'var(--green-bg)';
+            res.style.color = 'var(--green)';
+            res.innerText = 'Authenticated! Refreshing...';
+            setTimeout(() => location.reload(), 1500);
+        } else if (data.status === 'need_2fa') {
+            res.style.background = 'var(--yellow-bg)';
+            res.style.color = 'var(--yellow)';
+            res.innerText = '2FA required. Enter password above and click Verify again.';
+        } else {
+            res.style.background = 'var(--red-bg)';
+            res.style.color = 'var(--red)';
+            res.innerText = 'Error: ' + data.message;
+        }
+    });
+}
+
+function testProxy() {
+    const proxy = document.getElementById('proxyInput').value;
+    const res = document.getElementById('proxy-result');
+    res.style.display = 'block';
+    res.style.color = 'var(--blue)';
+    res.innerText = 'Testing...';
+    const fd = new FormData();
+    fd.append('proxy', proxy);
+    fetch('{{ url_for("test_proxy") }}', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            res.style.color = 'var(--green)';
+            res.innerText = '✓ Proxy OK — IP: ' + data.ip;
+        } else {
+            res.style.color = 'var(--red)';
+            res.innerText = '✗ Failed: ' + data.message;
+        }
+    }).catch(() => {
+        res.style.color = 'var(--red)';
+        res.innerText = '✗ Request error';
+    });
+}
+</script>
+{% endblock %}

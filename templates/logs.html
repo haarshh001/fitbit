@@ -1,0 +1,54 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="panel">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <h3>Live Logs</h3>
+        <div class="d-flex align-items-center" style="gap:15px;">
+            <label style="color:var(--text-muted); font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
+                <input type="checkbox" id="autoScroll" checked> Auto-scroll
+            </label>
+        </div>
+    </div>
+    <div class="panel-body p-0">
+        <div class="scroll-panel" id="logContainer" style="padding: 16px 20px; height: 75vh; overflow-y: auto; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px;">
+            <div style="text-align:center; color: var(--text-muted); padding: 40px 0;">Loading logs...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let lastLogCount = 0;
+
+function fetchLogs() {
+    fetch('{{ url_for("api_logs") }}')
+        .then(r => r.json())
+        .then(logs => {
+            const container = document.getElementById('logContainer');
+            const autoScroll = document.getElementById('autoScroll').checked;
+            if (logs.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding: 40px 0;">No logs yet. Start an instance to see activity.</div>';
+                return;
+            }
+            if (logs.length !== lastLogCount) {
+                lastLogCount = logs.length;
+                logs.reverse();
+                let html = '';
+                for (const log of logs) {
+                    let cls = '';
+                    if (log.includes('[ERROR]')) cls = 'color: var(--red);';
+                    else if (log.includes('[HIT]') || log.includes('SUCCESS')) cls = 'color: var(--green);';
+                    else if (log.includes('[+]')) cls = 'color: var(--accent);';
+                    html += `<div class="log-entry" style="${cls}">${log}</div>`;
+                }
+                container.innerHTML = html;
+                if (autoScroll) container.scrollTop = 0;
+            }
+        });
+}
+
+setInterval(fetchLogs, 2000);
+fetchLogs();
+</script>
+{% endblock %}
